@@ -1,0 +1,54 @@
+---
+
+- name: check for OSSEC agent service
+  win_service:
+    name: "OSSEC HIDS"
+  register: ossec_agent_service
+
+- name: debug output
+  debug:
+    var: ossec_agent_service.exists
+
+- block:
+  - name: configure Windows Group Policy for OSSEC
+    block:
+            - win_security_policy:
+                    section: Event Audit
+                    key: AuditLogonEvents
+                    value: 1
+            - win_security_policy:
+                    section: Event Audit
+                    key: AuditAccountLogon
+                    value: 1
+            - win_regedit:
+                    path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WINEVT\Channels\Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+                    name: Enabled
+                    type: dword
+                    data: 1
+
+  - name: enable Terminal Services log in event viewer
+    win_command: "wevtutil.exe sl Microsoft-Windows-TerminalServices-LocalSessionManager/Operational /e:true"
+
+  - name: get OSSEC agent
+    win_get_url:
+      url: http://updates.atomicorp.com/channels/atomic/windows/ossec-agent-win32-3.3.0-7006.exe
+      dest: C:\temp\ossec_agent_install.exe
+      force: no
+
+  - name: install OSSEC agent
+    win_package:
+      path: C:\temp\ossec_agent_install.exe
+      product_id: OSSEC
+      state: present
+      arguments: /S
+
+  - name: place OSSEC config file
+    win_template:
+      src: templates/ossec_standard.conf.j2
+      dest: C:\Program Files (x86)\ossec-agent\ossec.conf
+
+  - name: directions to complete installation
+    debug:
+      msg: "On ptilog, add the agent with IP (x.x.x.x/31) and extract the key. On the server being configured, open 'Manage Agent' and input the key, then restart the service. "
+  
+  when: ossec_agent_service.exists == False

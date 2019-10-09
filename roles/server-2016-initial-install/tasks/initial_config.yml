@@ -1,0 +1,66 @@
+---
+- name: wait for connection
+  wait_for_connection:
+          connect_timeout: 15
+          sleep: 15
+          timeout: 600
+
+- name: set hostname
+  win_hostname:
+    name: '{{ hostname }}'
+  register: set_hostname
+
+- block: 
+  - name: install windows updates
+    win_updates:
+      state: installed
+      reboot: yes
+
+  - name: install Google Chrome and Notepad++
+    win_chocolatey:
+      name: 
+       - googlechrome
+       - notepadplusplus
+      state: latest
+
+  - name: set computer description
+    win_shell: Get-CimInstance -ClassName Win32_OperatingSystem | Set-CimInstance -Property @{Description = '{{ computer_description }}'}
+
+  - name: set timezone to CST
+    win_timezone:
+      timezone: '{{ timezone }}'
+
+  - name: create temp dir
+    win_file:
+      path: C:\temp
+      state: directory
+
+  - name: create Admin user account
+    win_user:
+            name: '{{organization_name}}-Admin'
+            password: '{{ admin_user_pass }}'
+            state: present
+            groups:
+                    - Administrators
+            password_never_expires: yes
+
+  - name: reboot machine
+    win_reboot:
+
+  - name: win_ping
+    win_ping:
+
+  # - name: add to domain
+  #   win_domain_membership:
+  #           dns_domain_name: '{{ domain_name }}'
+  #           hostname: '{{ hostname }}'
+  #           domain_admin_user: '{{ domain_admin_username }}'
+  #           domain_admin_password: '{{ domain_admin_password }}'
+  #           state: domain 
+  #   register: domain_state
+
+  # - name: reboot after domain join
+  #   win_reboot:
+  #   when: domain_state.reboot_required
+
+  when: set_hostname is changed

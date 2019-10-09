@@ -1,0 +1,4 @@
+---
+# tasks file for server-2016
+#
+  - import_tasks: ncpa.yml

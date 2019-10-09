@@ -1,0 +1,76 @@
+---
+- name: check for IIS service
+  win_service:
+    name: "W3SVC"
+  register: iis_service
+
+- name: debug output
+  debug:
+    var: iis_service.exists
+
+- block:
+  - name: Install IIS
+    win_feature:
+      name: "Web-Server"
+      state: present
+      restart: yes
+      include_sub_features: no # changed
+      include_management_tools: yes
+
+  - name: install Web Platform Installer (for URL Rewrite installation)
+    win_chocolatey:
+      name: webpicmd
+      state: present
+
+  - name: Install URL Rewrite via Web Platform Installer
+    win_webpicmd:
+      name: URLRewrite2
+
+  - name: Copy IIS config (if behind ELB)
+    win_copy:
+      src: files/applicationHost-ELB.config 
+      dest: C:\Windows\System32\inetsrv\config\applicationHost.config
+      backup: yes
+    when: behind_elb == "y"
+
+  - name: Copy IIS config (if not behind ELB)
+    win_copy:
+      src: files/applicationHost-noELB.config
+      dest: C:\Windows\System32\inetsrv\config\applicationHost.config
+      backup: yes
+    when: behind_elb == "n"
+
+  - name: Copy updated OSSEC conf (if behind ELB)
+    win_copy:
+      src: files/ossec-ELB.conf
+      dest: C:\Program Files (x86)\ossec-agent\ossec.conf
+    when: behind_elb == "y"
+
+  - name: Copy updated OSSEC conf (if not behind ELB)
+    win_copy:
+      src: files/ossec-noELB.conf
+      dest: C:\Program Files (x86)\ossec-agent\ossec.conf
+    when: behind_elb == "n"
+
+  - name: Restart OSSEC service
+    win_service:
+      name: "OSSEC HIDS"
+      state: restarted
+
+  - name: Copy custom error.html
+    win_copy:
+      src: files/error.htm
+      dest: C:\inetpub\wwwroot\error.htm
+
+  - name: Copy room web.config to enable custom error messages
+    win_copy:
+      src: files/web.config
+      dest: C:\inetpub\wwwroot\web.config
+
+  - name: Restart IIS service
+    win_service:
+      name: "W3SVC"
+      state: restarted
+
+  when: iis_service.exists == False
+      #  when: iis_service.exists == True

@@ -1,0 +1,3 @@
+---
+# tasks file for ossec-install
+  - import_tasks: ossec.yml

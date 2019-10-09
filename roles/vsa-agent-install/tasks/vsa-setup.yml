@@ -1,0 +1,24 @@
+---
+- name: check for VSA agent service
+  win_service:
+    name: "Kaseya Agent"
+  register: vsa_agent_service
+
+- name: debug output
+  debug:
+    var: vsa_agent_service.exists
+
+- block:
+  - name: get VSA agent
+    win_get_url:
+      url: http://intvsaftp.intinc.com/vsa/vsa_agent.exe
+      dest: C:\temp\vsa_agent_install.exe
+      force: no
+
+  - name: install VSA agent
+    win_package:
+      path: C:\temp\vsa_agent_install.exe
+      product_id: KAINTNTK44468048088475
+      state: present
+      arguments: /s
+  when: vsa_agent_service.exists == False

@@ -1,0 +1,42 @@
+---
+- name: Check for IISCrypto-specific registry entry
+  win_reg_stat:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\Multi-Protocol Unified Hello
+
+  register: iiscrypto_configuration
+
+- name: print debug info
+  debug:
+    var: iiscrypto_configuration.exists
+
+- block: 
+
+  - name: create IISCrypto temp dir
+    win_file:
+      path: C:\temp\IISCrypto
+      state: directory
+
+  - name: copy IISCryptoCLI.exe
+    win_copy:
+      src: files/IISCryptoCli.exe
+      dest: C:\temp\IISCrypto\IISCryptoCli.exe
+
+  - name: copy IISCrypto template
+    win_copy:
+      src: files/tls1.2.ictpl
+      dest: C:\temp\IISCrypto\tls1.2.ictpl
+
+  - name: install IISCrypto template
+    win_command: .\IISCryptoCli.exe /template tls1.2.ictpl
+    args:
+      chdir: C:\temp\IISCrypto
+    register: iis_template_install_output
+
+  - name: print template installation output
+    debug:
+      var: iis_template_install_output.stdout_lines
+
+  - name: reboot to finalize configuration
+    win_reboot:
+
+  when: iiscrypto_configuration.exists == False  

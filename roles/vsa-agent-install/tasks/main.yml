@@ -1,0 +1,3 @@
+---
+# tasks file for vsa-agent-install
+  - import_tasks: vsa-setup.yml

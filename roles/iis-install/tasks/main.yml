@@ -1,0 +1,3 @@
+---
+# tasks file for iis-install
+  - import_tasks: iis-install.yml

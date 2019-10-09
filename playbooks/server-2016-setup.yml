@@ -1,0 +1,48 @@
+---
+- hosts: all
+  gather_facts: no
+  roles:
+          - server-2016-initial-install
+          - vsa-agent-install
+          - ncpa-install
+          - ossec-install
+          
+  vars_prompt:
+    - name: organization_name
+      prompt: "What organization is this for (eg. INT, RAI, DWL, etc.)?"
+      default: "RAI"
+      private: no 
+
+    - name: hostname
+      prompt: "Enter hostname"
+      default: "int-sv-rai-test"
+      private: no
+
+    - name: computer_description
+      prompt: "Enter computer description"
+      default: "test"
+      private: no
+    
+    - name: timezone
+      prompt: "Enter timezone"
+      default: "Central Standard Time"
+      private: no
+
+    - name: admin_user_pass
+      prompt: "Enter Admin user password"
+      default: "redacted"
+      unsafe: yes
+      private: yes
+
+    - name: domain_name
+      prompt: "Enter the domain to join this machine to"
+      private: no
+
+    - name: domain_admin_username
+      prompt: "Enter your domain admin username (ORG\\username)"
+      private: no
+
+    - name: domain_admin_password
+      prompt: "Enter your domain admin password"
+      unsafe: yes
+      private: yes

@@ -1,0 +1,3 @@
+---
+# tasks file for iiscrypto-install
+  - import_tasks: iiscrypto.yml

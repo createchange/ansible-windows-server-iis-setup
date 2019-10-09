@@ -1,0 +1,3 @@
+---
+- import_playbook: server-2016-setup.yml
+- import_playbook: iis-setup.yml
